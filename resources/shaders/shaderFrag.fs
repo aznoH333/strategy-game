@@ -12,8 +12,8 @@ void main()
     
 	
 	vec4 tex = texture(texture0, fragTexCoord);
-    float crt = 1.0 - (sin(fragTexCoord.y * 600) * 0.4);
-	tex.a = tex.a * crt;
+    	// float crt = 1.0 - (sin(fragTexCoord.y * 600) * 0.4);
+	// tex.a = tex.a * crt;
 	
 	finalColor = tex * fragColor;
 }
