@@ -14,9 +14,12 @@ float cameraY = 100;
 
 
 char* tileTextures[] = {"ground_tiles_0001", "ground_tiles_0002", "ground_tiles_0003", "ground_tiles_0004", "ground_tiles_0005"}; 
+char* tileObjects[] = {"pieces_0001", "pieces_0002", "pieces_0003"};
+
 
 typedef struct {
 	int tileTexture;
+	int tileObject;
 	int x;
 	int y;
 	bool discovered;
@@ -37,7 +40,13 @@ void initWorld() {
 	for (int x = 0; x < BOARD_WIDTH; x++) {
 		for (int y = 0; y < BOARD_HEIGHT; y++) {
 
-			world[x][y] = (WorldTile){ .tileTexture = GetRandomValue(0, 3), .x = x, .y = y, .discovered = false };
+			world[x][y] = (WorldTile){ 
+				.tileTexture = GetRandomValue(0, 3), 
+				.tileObject = -1,
+				.x = x, 
+				.y = y, 
+				.discovered = false 
+			};
 			
 		}
 	}
@@ -49,7 +58,7 @@ void updateWorld() {
 	
 	for (int x = 0; x < BOARD_WIDTH; x++) {
 		for (int y = 0; y < BOARD_HEIGHT; y++) {
-			
+			// draw main tile
 			WorldTile* tile = &world[x][y];
 		
 			char* sprite;
@@ -62,6 +71,13 @@ void updateWorld() {
 
 			
 			spr(sprite, x * (TILE_WIDTH + TILE_GAP) - cameraX, y * TILE_HEIGHT + (x * ODD_TILE_OFFSET) - cameraY, 0);
+
+			// draw object
+			if (tile->tileObject == -1) {
+				continue;
+			}
+
+			spr(tileObjects[tile->tileObject], x * (TILE_WIDTH + TILE_GAP) - cameraX, y * TILE_HEIGHT + (x * ODD_TILE_OFFSET) - cameraY, 1);
 		}
 	}
 
@@ -80,6 +96,17 @@ void updateWorld() {
 	// clicking
 	
 	if (IsMouseButtonPressed(0)) {
+		WorldTile* clickedTile = &world[boardMouseX][boardMouseY];
+		
+		if (clickedTile->discovered) {
+			clickedTile->tileObject = GetRandomValue(0, 2);	
+			
+			return;
+		}
+
+
+
+
 		// TODO : there is a bug here. target position isnt checked properly. can write to unalocated memmory
 		// TODO : this is way too repetitive
 		// above row
