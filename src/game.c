@@ -9,6 +9,10 @@
 // World map
 //------------------------------------------------------------------------------------
 
+float cameraX = 0;
+float cameraY = 100;
+
+
 char* tileTextures[] = {"ground_tiles_0001", "ground_tiles_0002", "ground_tiles_0003", "ground_tiles_0004", "ground_tiles_0005"}; 
 
 typedef struct {
@@ -19,8 +23,8 @@ typedef struct {
 } WorldTile;
 
 
-#define BOARD_WIDTH 10
-#define BOARD_HEIGHT 10
+#define BOARD_WIDTH 32
+#define BOARD_HEIGHT 32
 
 #define TILE_WIDTH 23
 #define TILE_HEIGHT 20
@@ -39,6 +43,7 @@ void initWorld() {
 	}
 }
 
+
 void updateWorld() {
 	// draw world
 	
@@ -56,28 +61,27 @@ void updateWorld() {
 			}
 
 			
-			spr(sprite, x * (TILE_WIDTH + TILE_GAP), y * TILE_HEIGHT + (x * ODD_TILE_OFFSET), 0);
-
-
+			spr(sprite, x * (TILE_WIDTH + TILE_GAP) - cameraX, y * TILE_HEIGHT + (x * ODD_TILE_OFFSET) - cameraY, 0);
 		}
 	}
 
 	// mouse highlight
 	Vector2 mousePos = getMousePosition();
 
-	int boardMouseX = round(mousePos.x / TILE_WIDTH);
+	int boardMouseX = round((mousePos.x + cameraX) / TILE_WIDTH);
 	float yOffset = (boardMouseX * ODD_TILE_OFFSET); 
-	int boardMouseY = round((mousePos.y - yOffset) / TILE_HEIGHT);
+	int boardMouseY = round((mousePos.y - yOffset + cameraY) / TILE_HEIGHT);
 	float worldMouseX = ((float)boardMouseX) * TILE_WIDTH;
 	float worldMouseY = ((float)boardMouseY) * TILE_HEIGHT + yOffset;
 
 
-	spr("ground_tiles_0006", worldMouseX, worldMouseY, 2);
+	spr("ground_tiles_0006", worldMouseX - cameraX, worldMouseY - cameraY, 2);
 
 	// clicking
 	
 	if (IsMouseButtonPressed(0)) {
-		
+		// TODO : there is a bug here. target position isnt checked properly. can write to unalocated memmory
+		// TODO : this is way too repetitive
 		// above row
 		for (int targetX = boardMouseX; targetX <= boardMouseX + 1; targetX++) {
 			if (targetX < BOARD_WIDTH && targetX >= 0 && boardMouseY < BOARD_HEIGHT && boardMouseY >= 0) {
@@ -105,6 +109,22 @@ void updateWorld() {
 		}
 	}
 	
+	// moving camera
+	if (IsKeyDown(KEY_W)) {
+		cameraY -= 1.5f;
+	}
+	
+	if (IsKeyDown(KEY_S)) {
+		cameraY += 1.5f;
+	}
+
+	if (IsKeyDown(KEY_A)) {
+		cameraX -= 1.5f;
+	}
+
+	if (IsKeyDown(KEY_D)) {
+		cameraX += 1.5f;
+	}
 
 }
 
