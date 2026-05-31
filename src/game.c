@@ -86,7 +86,7 @@ int main(void){
 	SetTargetFPS(60);
 	// Main game loop
 
-	initWorld();
+	initNewBoard(32, 32);
 
 
 	tempWorldGeneration();

@@ -3,8 +3,6 @@
 
 #include "stdbool.h"
 
-
-
 // -------------------------------------------------------------------------------------
 // Structs
 // -------------------------------------------------------------------------------------
@@ -33,17 +31,27 @@ typedef struct {
 } WorldCursor;
 
 
+typedef struct {
+	int boardWidth;
+	int boardHeight;
+} BoardHandle;
+
+
 
 // -------------------------------------------------------------------------------------
 // Functions
 // -------------------------------------------------------------------------------------
-void initWorld();
+void initNewBoard(int width, int height);
 void updateWorld();
 bool isInWorldBounds(int x, int y);
-GameCamera* getCamera();
-WorldCursor* getWorldCursor();
 WorldTile* getWorldTile(int x, int y);
 void setWorldTile(int x, int y, char* tileSprite, char* tileDecorationSprite);
 void discoverTile(int x, int y);
+
+
+
+GameCamera* getCamera();
+WorldCursor* getWorldCursor();
+BoardHandle* getBoardHandle();
 
 #endif

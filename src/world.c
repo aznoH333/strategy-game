@@ -10,59 +10,38 @@
 char* tileTextures[] = {"ground_tiles_0001", "ground_tiles_0002", "ground_tiles_0003", "ground_tiles_0004", "ground_tiles_0005"}; 
 char* tileObjects[] = {"pieces_0001", "pieces_0002", "pieces_0003"};
 
-#define BOARD_WIDTH 32
-#define BOARD_HEIGHT 32
+#define MAX_BOARD_WIDTH 32
+#define MAX_BOARD_HEIGHT 32
 
 #define TILE_WIDTH 23
 #define TILE_HEIGHT 20
 #define ODD_TILE_OFFSET 10
 #define TILE_GAP 0
 
-WorldTile world[BOARD_WIDTH][BOARD_HEIGHT];
+WorldTile world[MAX_BOARD_WIDTH][MAX_BOARD_HEIGHT];
 
 static GameCamera camera = (GameCamera){ .x = 0.0f, .y = 0.0f };
 
 static WorldCursor cursor = (WorldCursor) { 0 };
 
+static BoardHandle board = (BoardHandle) {
+	.boardWidth = 0,
+	.boardHeight = 0
+};
+
 // -------------------------------------------------------------------------------------
 // World generation
 // -------------------------------------------------------------------------------------
-void initWorld() {
+void initNewBoard(int width, int height){
+	
+	board.boardWidth = width;
+	board.boardHeight = height;
+
 	// generate world
-	for (int x = 0; x < BOARD_WIDTH; x++) {
-		for (int y = 0; y < BOARD_HEIGHT; y++) {
-
-			int type = 0;
-			int tileObject = -1;
-
-			if (randomChance(0.6f)) {
-				type = 1;
-				if (randomChance(0.6f)) {
-					tileObject = 1;
-				}
-			}
-
-
-			else if (randomChance(0.2f)) {
-				type = 0;
-			}
-
-			else if (randomChance(0.4f)) {
-				type = 2;
-			}
-
-			else {
-				type = 3;
-				if (randomChance(0.1f)) {
-					tileObject = 0;
-				}
-			}
-
-		
-
-
+	for (int x = 0; x < board.boardWidth; x++) {
+		for (int y = 0; y < board.boardHeight; y++) {
 			world[x][y] = (WorldTile){ 
-				.tileSprite = tileTextures[type], 
+				.tileSprite = "ground_tiles_0001", 
 				.tileDecorationSprite = NULL,
 				.x = x, 
 				.y = y, 
@@ -80,9 +59,8 @@ void initWorld() {
 // -------------------------------------------------------------------------------------
 void updateWorld() {
 	// draw world
-	
-	for (int x = 0; x < BOARD_WIDTH; x++) {
-		for (int y = 0; y < BOARD_HEIGHT; y++) {
+	for (int x = 0; x < board.boardWidth; x++) {
+		for (int y = 0; y < board.boardHeight; y++) {
 			// draw main tile
 			WorldTile* tile = &world[x][y];
 		
@@ -125,10 +103,6 @@ void updateWorld() {
 	if (isInWorldBounds(cursor.boardX, cursor.boardY)) {
 		cursor.hoveredTile = getWorldTile(cursor.boardX, cursor.boardY); 
 	}
-	
-
-
-	
 
 }
 
@@ -142,8 +116,13 @@ WorldCursor* getWorldCursor() {
 }
 
 
+BoardHandle* getBoardHandle(){
+	return &board;
+}
+
+
 bool isInWorldBounds(int x, int y) {
-	return x >= 0 && y >= 0 && x < BOARD_WIDTH && y < BOARD_HEIGHT;
+	return x >= 0 && y >= 0 && x < board.boardWidth && y < board.boardHeight;
 }
 
 WorldTile* getWorldTile(int x, int y) {
