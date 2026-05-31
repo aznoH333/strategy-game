@@ -68,6 +68,19 @@ float boolToSign(bool input) {
 }
 
 
+#define RandomFloatPrecision 1000
+float randomFloat(float min, float max) {
+	int randomValue = GetRandomValue(1, RandomFloatPrecision);
+	float normalized = ((float) randomValue) / RandomFloatPrecision;
+
+	return (normalized * (max - min)) + min;
+}
+
+
+bool randomChance(float chance) {
+	return randomFloat(0.0f, 1.0f) < chance;
+}
+
 //------------------------------------------------------------------------------------
 // Asset loading
 //------------------------------------------------------------------------------------

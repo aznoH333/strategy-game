@@ -2,175 +2,95 @@
 #include "utils.h"
 #include "string.h"
 #include "math.h"
+#include "world.h"
 
 
 
 //------------------------------------------------------------------------------------
-// World map
+// Variable declarations
 //------------------------------------------------------------------------------------
+GameCamera* camera;
+WorldCursor* cursor;
 
-float cameraX = 0;
-float cameraY = 100;
-
-
-char* tileTextures[] = {"ground_tiles_0001", "ground_tiles_0002", "ground_tiles_0003", "ground_tiles_0004", "ground_tiles_0005"}; 
-char* tileObjects[] = {"pieces_0001", "pieces_0002", "pieces_0003"};
-
-
-typedef struct {
-	int tileTexture;
-	int tileObject;
-	int x;
-	int y;
-	bool discovered;
-} WorldTile;
-
-
-#define BOARD_WIDTH 32
-#define BOARD_HEIGHT 32
-
-#define TILE_WIDTH 23
-#define TILE_HEIGHT 20
-#define ODD_TILE_OFFSET 10
-#define TILE_GAP 0
-
-WorldTile world[BOARD_WIDTH][BOARD_HEIGHT];
-void initWorld() {
-	// generate world
-	for (int x = 0; x < BOARD_WIDTH; x++) {
-		for (int y = 0; y < BOARD_HEIGHT; y++) {
-
-			world[x][y] = (WorldTile){ 
-				.tileTexture = GetRandomValue(0, 3), 
-				.tileObject = -1,
-				.x = x, 
-				.y = y, 
-				.discovered = false 
-			};
-			
-		}
-	}
+//------------------------------------------------------------------------------------
+// world
+//------------------------------------------------------------------------------------
+void tempWorldGeneration() {
+	printf("size %ld \n", sizeof(int));
 }
 
 
-void updateWorld() {
-	// draw world
-	
-	for (int x = 0; x < BOARD_WIDTH; x++) {
-		for (int y = 0; y < BOARD_HEIGHT; y++) {
-			// draw main tile
-			WorldTile* tile = &world[x][y];
+
+
+void tempWorldStuff() {
+
+	// moving camera
+	if (IsKeyDown(KEY_W)) {
+		camera->y -= 1.5f;
+	}
 		
-			char* sprite;
-
-			if (tile->discovered) {
-				sprite = tileTextures[tile->tileTexture]; 
-			} else {
-				sprite = "ground_tiles_0005";
-			}
-
-			
-			spr(sprite, x * (TILE_WIDTH + TILE_GAP) - cameraX, y * TILE_HEIGHT + (x * ODD_TILE_OFFSET) - cameraY, 0);
-
-			// draw object
-			if (tile->tileObject == -1) {
-				continue;
-			}
-
-			spr(tileObjects[tile->tileObject], x * (TILE_WIDTH + TILE_GAP) - cameraX, y * TILE_HEIGHT + (x * ODD_TILE_OFFSET) - cameraY, 1);
-		}
+	if (IsKeyDown(KEY_S)) {
+		camera->y += 1.5f;
 	}
 
-	// mouse highlight
-	Vector2 mousePos = getMousePosition();
+	if (IsKeyDown(KEY_A)) {
+		camera->x -= 1.5f;
+	}
+	
+	if (IsKeyDown(KEY_D)) {
+		camera->x += 1.5f;
+	}
 
-	int boardMouseX = round((mousePos.x + cameraX) / TILE_WIDTH);
-	float yOffset = (boardMouseX * ODD_TILE_OFFSET); 
-	int boardMouseY = round((mousePos.y - yOffset + cameraY) / TILE_HEIGHT);
-	float worldMouseX = ((float)boardMouseX) * TILE_WIDTH;
-	float worldMouseY = ((float)boardMouseY) * TILE_HEIGHT + yOffset;
 
-
-	spr("ground_tiles_0006", worldMouseX - cameraX, worldMouseY - cameraY, 2);
+	// draw mouse
+	spr("ground_tiles_0006", cursor->worldX - camera->x, cursor->worldY - camera->y, 2);
+	
 
 	// clicking
 	
 	if (IsMouseButtonPressed(0)) {
-		WorldTile* clickedTile = &world[boardMouseX][boardMouseY];
-		
-		if (clickedTile->discovered) {
-			clickedTile->tileObject = GetRandomValue(0, 2);	
-			
-			return;
-		}
-
-
-
-
 		// TODO : there is a bug here. target position isnt checked properly. can write to unalocated memmory
 		// TODO : this is way too repetitive
 		// above row
-		for (int targetX = boardMouseX; targetX <= boardMouseX + 1; targetX++) {
-			if (targetX < BOARD_WIDTH && targetX >= 0 && boardMouseY < BOARD_HEIGHT && boardMouseY >= 0) {
-				WorldTile* tile = &world[targetX][boardMouseY - 1];
-				tile->discovered = true;
-			}
+		for (int targetX = cursor->boardX; targetX <= cursor->boardX + 1; targetX++) {
+			discoverTile(targetX, cursor->boardY - 1);
 		}
 		
 
 		// middle row
-		for (int targetX = boardMouseX - 1; targetX <= boardMouseX + 1; targetX++) {
-			if (targetX < BOARD_WIDTH && targetX >= 0 && boardMouseY < BOARD_HEIGHT && boardMouseY >= 0) {
-				WorldTile* tile = &world[targetX][boardMouseY];
-				tile->discovered = true;
-			}
+		for (int targetX = cursor->boardX - 1; targetX <= cursor->boardX + 1; targetX++) {
+			discoverTile(targetX, cursor->boardY);
 		}
 
 		
 		// bottom row
-		for (int targetX = boardMouseX - 1; targetX < boardMouseX + 1; targetX++) {
-			if (targetX < BOARD_WIDTH && targetX >= 0 && boardMouseY < BOARD_HEIGHT && boardMouseY >= 0) {
-				WorldTile* tile = &world[targetX][boardMouseY + 1];
-				tile->discovered = true;
-			}
+		for (int targetX = cursor->boardX - 1; targetX < cursor->boardX + 1; targetX++) {
+			discoverTile(targetX, cursor->boardY + 1);
 		}
 	}
-	
-	// moving camera
-	if (IsKeyDown(KEY_W)) {
-		cameraY -= 1.5f;
-	}
-	
-	if (IsKeyDown(KEY_S)) {
-		cameraY += 1.5f;
-	}
-
-	if (IsKeyDown(KEY_A)) {
-		cameraX -= 1.5f;
-	}
-
-	if (IsKeyDown(KEY_D)) {
-		cameraX += 1.5f;
-	}
-
 }
-
 
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
-int main(void)
-{
+int main(void){
 	SetTraceLogLevel(LOG_WARNING); 
 	const int screenWidth = 800;
 	const int screenHeight = 400;
 
+	
+	camera = getCamera();
+	cursor = getWorldCursor();
 	InitTextureWindow(screenWidth, screenHeight, 256, 224, "empty project");	
 	UseShader("./resources/shaders/shaderVert.vs", "./resources/shaders/shaderFrag.fs");
 	SetTargetFPS(60);
 	// Main game loop
 
 	initWorld();
+
+
+	tempWorldGeneration();
+
 	while (!WindowShouldClose()){
 		updateWorld();
 		
@@ -178,6 +98,8 @@ int main(void)
 			SwitchResolution(0,0, true);
 		}
 
+		
+		tempWorldStuff();
 		Render();
 	}
 

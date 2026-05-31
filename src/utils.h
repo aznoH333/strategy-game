@@ -45,7 +45,8 @@ void doForEachFileInFolder(char* directoryPath, void (*func)(char*, int, struct 
 float min(float a, float b);
 float max(float a, float b);
 float boolToSign(bool input);
-
+float randomFloat(float min, float max);
+bool randomChance(float chance);
 
 // -------------------------------------------------------------------------------------
 // Rendering
