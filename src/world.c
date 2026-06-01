@@ -1,7 +1,7 @@
 #include "world.h"
 #include "utils.h"
 #include "math.h"
-
+#include "stdlib.h"
 
 
 // -------------------------------------------------------------------------------------
@@ -34,6 +34,11 @@ static BoardHandle board = (BoardHandle) {
 // -------------------------------------------------------------------------------------
 void initNewBoard(int width, int height){
 	
+	if (width > MAX_BOARD_WIDTH || height > MAX_BOARD_HEIGHT) {
+		printf("invalid board size %d x %d \n", width, height);
+		exit(1);
+	}
+
 	board.boardWidth = width;
 	board.boardHeight = height;
 
