@@ -81,6 +81,16 @@ bool randomChance(float chance) {
 	return randomFloat(0.0f, 1.0f) < chance;
 }
 
+
+float interpolate(float a, float b, float w){
+	float mn = min(a, b);
+	float mx = max(a, b);
+	float distance = mx - mn;
+
+	return distance * w + mn;
+
+}
+
 //------------------------------------------------------------------------------------
 // Asset loading
 //------------------------------------------------------------------------------------
