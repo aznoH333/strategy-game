@@ -129,6 +129,27 @@ void createEntity(int x, int y, char* sprite) {
 	ArrayPush(entities, ((Entity){.x = x, .y = y, .sprite = sprite, .revealTiles = true}));
 }
 
+
+void revealTilesInRadius(int x, int y, int radius) {
+	for (int xi = -radius; xi <= radius; xi++) {
+		for (int yi = -radius; yi <= radius; yi++) {
+			if (yi + xi <  -radius + (radius * (int)(3.0f / 4.0f))) {
+				continue;
+			}
+
+
+			if (yi + xi > radius - (radius * (int)(3.0f / 4.0f))) {
+				continue;
+			}
+			discoverTile(xi + x, yi + y);
+		}
+	}
+}
+
+void entityEnteredTile(int tileX, int tileY, Entity* entity) {
+	
+}
+
 void updateCursor() {
 	
 	// draw mouse
@@ -137,6 +158,8 @@ void updateCursor() {
 
 	// clicking
 	if (IsMouseButtonPressed(0)) {
+		revealTilesInRadius(cursor->boardX, cursor->boardY, 3);
+		/*
 		// above row
 		for (int targetX = cursor->boardX; targetX <= cursor->boardX + 1; targetX++) {
 			discoverTile(targetX, cursor->boardY - 1);
@@ -151,7 +174,7 @@ void updateCursor() {
 		// bottom row
 		for (int targetX = cursor->boardX - 1; targetX < cursor->boardX + 1; targetX++) {
 			discoverTile(targetX, cursor->boardY + 1);
-		}
+		}*/
 	}
 }
 
