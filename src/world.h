@@ -2,6 +2,7 @@
 #define _WORLD
 
 #include "stdbool.h"
+#include "raylib.h"
 
 // -------------------------------------------------------------------------------------
 // Structs
@@ -47,9 +48,13 @@ bool isInWorldBounds(int x, int y);
 WorldTile* getWorldTile(int x, int y);
 void setWorldTile(int x, int y, char* tileSprite, char* tileDecorationSprite);
 void discoverTile(int x, int y);
+bool isTileDiscovered(int x, int y);
+Vector2 resolveScreenPosition(float gridX, float gridY);
 
 
-
+// -------------------------------------------------------------------------------------
+// Struct handles
+// -------------------------------------------------------------------------------------
 GameCamera* getCamera();
 WorldCursor* getWorldCursor();
 BoardHandle* getBoardHandle();

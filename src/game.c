@@ -100,10 +100,67 @@ void tempWorldGeneration() {
 }
 
 
+//------------------------------------------------------------------------------------
+// Entities
+//------------------------------------------------------------------------------------
+typedef struct {
+	int x;
+	int y;
+	char* sprite;
+	bool revealTiles;
+} Entity;
 
+#define MAX_ENTITIES 100
+GenArrayDefinition(Entity, MAX_ENTITIES, EntityArray);
 
+EntityArray entities = {0};
+
+void updateEntities() {
+	for ( int i = 0; i < entities.count; i++ ) {
+		Entity* entity = &ArrayGet(entities, i);
+		
+
+		Vector2 screenPosition = resolveScreenPosition(entity->x, entity->y);
+		spr(entity->sprite, screenPosition.x, screenPosition.y, 1);
+	}
+}
+
+void createEntity(int x, int y, char* sprite) {
+	ArrayPush(entities, ((Entity){.x = x, .y = y, .sprite = sprite, .revealTiles = true}));
+}
+
+void updateCursor() {
+	
+	// draw mouse
+	spr("ground_tiles_0006", cursor->worldX - camera->x, cursor->worldY - camera->y, 2);
+	
+
+	// clicking
+	if (IsMouseButtonPressed(0)) {
+		// above row
+		for (int targetX = cursor->boardX; targetX <= cursor->boardX + 1; targetX++) {
+			discoverTile(targetX, cursor->boardY - 1);
+		}
+		
+		// middle row
+		for (int targetX = cursor->boardX - 1; targetX <= cursor->boardX + 1; targetX++) {
+			discoverTile(targetX, cursor->boardY);
+		}
+
+		
+		// bottom row
+		for (int targetX = cursor->boardX - 1; targetX < cursor->boardX + 1; targetX++) {
+			discoverTile(targetX, cursor->boardY + 1);
+		}
+	}
+}
+
+//------------------------------------------------------------------------------------
+// Temp
+//------------------------------------------------------------------------------------
 void tempWorldStuff() {
-
+	updateEntities();
+	updateCursor();
 	// moving camera
 	if (IsKeyDown(KEY_W)) {
 		camera->y -= 1.5f;
@@ -122,32 +179,6 @@ void tempWorldStuff() {
 	}
 
 
-	// draw mouse
-	spr("ground_tiles_0006", cursor->worldX - camera->x, cursor->worldY - camera->y, 2);
-	
-
-	// clicking
-	
-	if (IsMouseButtonPressed(0)) {
-		// TODO : there is a bug here. target position isnt checked properly. can write to unalocated memmory
-		// TODO : this is way too repetitive
-		// above row
-		for (int targetX = cursor->boardX; targetX <= cursor->boardX + 1; targetX++) {
-			discoverTile(targetX, cursor->boardY - 1);
-		}
-		
-
-		// middle row
-		for (int targetX = cursor->boardX - 1; targetX <= cursor->boardX + 1; targetX++) {
-			discoverTile(targetX, cursor->boardY);
-		}
-
-		
-		// bottom row
-		for (int targetX = cursor->boardX - 1; targetX < cursor->boardX + 1; targetX++) {
-			discoverTile(targetX, cursor->boardY + 1);
-		}
-	}
 }
 
 //------------------------------------------------------------------------------------
@@ -170,8 +201,10 @@ int main(void){
 	SetTargetFPS(60);
 	// Main game loop
 
-	initNewBoard(20, 20);
 
+	initNewBoard(20, 20);
+	// spawn debug guy
+	createEntity(0, 0, "pieces_0006");
 
 	tempWorldGeneration();
 

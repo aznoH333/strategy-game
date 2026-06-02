@@ -77,14 +77,16 @@ void updateWorld() {
 				sprite = "ground_tiles_0005";
 			}
 
-			spr(sprite, x * (TILE_WIDTH + TILE_GAP) - camera.x, y * TILE_HEIGHT + (x * ODD_TILE_OFFSET) - camera.y, 0);
+			Vector2 screenPosition = resolveScreenPosition(x, y); 
+
+			spr(sprite, screenPosition.x, screenPosition.y, 0);
 
 			// draw object
 			if (tile->tileDecorationSprite == NULL || !tile->discovered) {
 				continue;
 			}
 
-			spr(tile->tileDecorationSprite, x * (TILE_WIDTH + TILE_GAP) - camera.x, y * TILE_HEIGHT + (x * ODD_TILE_OFFSET) - camera.y, 1);
+			spr(tile->tileDecorationSprite, screenPosition.x, screenPosition.y, 1);
 		}
 	}
 
@@ -112,20 +114,6 @@ void updateWorld() {
 }
 
 
-GameCamera* getCamera() {
-	return &camera;
-}
-
-WorldCursor* getWorldCursor() {
-	return &cursor;
-}
-
-
-BoardHandle* getBoardHandle(){
-	return &board;
-}
-
-
 bool isInWorldBounds(int x, int y) {
 	return x >= 0 && y >= 0 && x < board.boardWidth && y < board.boardHeight;
 }
@@ -148,4 +136,33 @@ void discoverTile(int x, int y) {
 	
 	WorldTile* tile = getWorldTile(x, y);
 	tile->discovered = true;
+}
+
+
+bool isTileDiscovered(int x, int y){
+	return getWorldTile(x, y)->discovered;
+}
+
+
+Vector2 resolveScreenPosition(float gridX, float gridY) {
+	return (Vector2) {
+		.x = gridX * (TILE_WIDTH + TILE_GAP) - camera.x, 
+		.y = gridY * TILE_HEIGHT + (gridX * ODD_TILE_OFFSET) - camera.y
+	};
+}
+
+// -------------------------------------------------------------------------------------
+// Struct handles
+// -------------------------------------------------------------------------------------
+GameCamera* getCamera() {
+	return &camera;
+}
+
+WorldCursor* getWorldCursor() {
+	return &cursor;
+}
+
+
+BoardHandle* getBoardHandle(){
+	return &board;
 }
