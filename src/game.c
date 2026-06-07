@@ -20,7 +20,9 @@ typedef struct {
 	int x;
 	int y;
 	char* sprite;
+	char* name;
 	bool revealTiles;
+	int moveDistance;
 } Entity;
 
 #define MAX_ENTITIES 100
@@ -62,51 +64,25 @@ void entityEnteredTile(int tileX, int tileY, Entity* entity) {
 }
 
 
-void createEntity(int x, int y, char* sprite) {
-	ArrayPush(entities, ((Entity){.x = x, .y = y, .sprite = sprite, .revealTiles = true}));
+void createEntity(
+	int x, 
+	int y, 
+	char* sprite,
+	char* name,
+	int moveDistance
+) {
+	ArrayPush(entities, ((Entity)
+		{
+			.x = x, 
+			.y = y, 
+			.sprite = sprite, 
+			.revealTiles = true,
+			.name = name,
+			.moveDistance = moveDistance
+
+		}));
 	Entity* addedEntity = &entities.elements[entities.count-1];
 	entityEnteredTile(x, y, addedEntity);
-}
-
-
-
-int selectedTileX = -1;
-int selectedTileY = -1;
-bool isTileSelected = false;
-int selectedEntityIndex = 0;
-void selectTile(int x, int y) {
-	if (!isInWorldBounds(x, y)) {
-		isTileSelected = false;
-		return;
-	}
-	
-	if (x != selectedTileX || y != selectedTileY) {
-
-		selectedTileX = x;
-		selectedTileY = y;
-		selectedEntityIndex = 0;
-
-	} else {
-
-		selectedEntityIndex++;
-
-	}
-
-
-	isTileSelected = true;
-	
-}
-
-void moveEntity(int targetX, int targetY, Entity* entity) {
-	if (!isInWorldBounds(targetX, targetY)) {
-		return;
-	}
-
-	entity->x = targetX;
-	entity->y = targetY;
-
-
-	entityEnteredTile(targetX, targetY, entity);
 }
 
 
@@ -132,6 +108,49 @@ Entity* getEntityOnTile(int tileX, int tileY, int entityIndex) {
 	return results[entityIndex % resultCount];
 }
 
+int selectedTileX = -1;
+int selectedTileY = -1;
+bool isTileSelected = false;
+int selectedEntityIndex = 0;
+Entity* selectedEntity = NULL;
+void selectTile(int x, int y) {
+	if (!isInWorldBounds(x, y)) {
+		isTileSelected = false;
+		selectedEntity = NULL;
+		return;
+	}
+	
+	if (x != selectedTileX || y != selectedTileY) {
+
+		selectedTileX = x;
+		selectedTileY = y;
+		selectedEntityIndex = 0;
+
+	} else {
+
+		selectedEntityIndex++;
+
+	}
+
+	selectedEntity = getEntityOnTile(x, y, selectedEntityIndex); 
+	isTileSelected = true;
+	
+}
+
+void moveEntity(int targetX, int targetY, Entity* entity) {
+	if (!isInWorldBounds(targetX, targetY)) {
+		return;
+	}
+
+	entity->x = targetX;
+	entity->y = targetY;
+
+
+	entityEnteredTile(targetX, targetY, entity);
+}
+
+
+
 void moveCommand(int targetX, int targetY) {
 	if (!isInWorldBounds(targetX, targetY) || !isTileSelected) {
 		return;
@@ -141,6 +160,11 @@ void moveCommand(int targetX, int targetY) {
 
 	if (entity == NULL) {
 		printf("selected entity is null\n");
+		return;
+	}
+
+	if (getTileDistance(targetX, targetY, entity->x, entity->y) > entity->moveDistance) {
+		printf("cant move that far\n");
 		return;
 	}
 
@@ -162,8 +186,13 @@ void updateCursor() {
 		 
 		spr("ground_tiles_0006", pos.x, pos.y, 1);
 	}
+	
 
 	drawText(modelLabels[cursorMode], 10, 10, 1, WHITE);
+	
+	if ( selectedEntity != NULL ) {
+		drawText(selectedEntity->name, 10, 32, 1, WHITE);
+	}
 
 
 	if (IsKeyPressed(KEY_ONE)) {
@@ -243,8 +272,8 @@ int main(void){
 
 	generateNewMap(20, 20);
 	// spawn debug guy
-	createEntity(0, 0, "pieces_0006");
-	createEntity(0, 1, "pieces_0007");
+	createEntity(0, 0, "pieces_0006", "red guy", 5);
+	createEntity(0, 1, "pieces_0007", "blue guy", 2);
 
 	while (!WindowShouldClose()){
 		updateWorld();

@@ -50,6 +50,7 @@ void setWorldTile(int x, int y, char* tileSprite, char* tileDecorationSprite);
 void discoverTile(int x, int y);
 bool isTileDiscovered(int x, int y);
 Vector2 resolveScreenPosition(float gridX, float gridY);
+int getTileDistance(int startX, int startY, int endX, int endY);
 
 
 // -------------------------------------------------------------------------------------

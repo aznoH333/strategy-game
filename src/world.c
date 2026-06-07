@@ -151,6 +151,10 @@ Vector2 resolveScreenPosition(float gridX, float gridY) {
 	};
 }
 
+int getTileDistance(int startX, int startY, int endX, int endY) {
+	return abs(startX - endX) + abs(startY - endY);
+}
+
 // -------------------------------------------------------------------------------------
 // Struct handles
 // -------------------------------------------------------------------------------------
