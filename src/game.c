@@ -125,10 +125,6 @@ void updateEntities() {
 	}
 }
 
-void createEntity(int x, int y, char* sprite) {
-	ArrayPush(entities, ((Entity){.x = x, .y = y, .sprite = sprite, .revealTiles = true}));
-}
-
 
 void revealTilesInRadius(int x, int y, int radius) {
 	for (int xi = -radius; xi <= radius; xi++) {
@@ -147,34 +143,141 @@ void revealTilesInRadius(int x, int y, int radius) {
 }
 
 void entityEnteredTile(int tileX, int tileY, Entity* entity) {
+	if (entity->revealTiles) {
+		revealTilesInRadius(tileX, tileY, 2);	
+	}
+}
+
+
+void createEntity(int x, int y, char* sprite) {
+	ArrayPush(entities, ((Entity){.x = x, .y = y, .sprite = sprite, .revealTiles = true}));
+	Entity* addedEntity = &entities.elements[entities.count-1];
+	entityEnteredTile(x, y, addedEntity);
+}
+
+
+
+int selectedTileX = -1;
+int selectedTileY = -1;
+bool isTileSelected = false;
+int selectedEntityIndex = 0;
+void selectTile(int x, int y) {
+	if (!isInWorldBounds(x, y)) {
+		isTileSelected = false;
+		return;
+	}
+	
+	if (x != selectedTileX || y != selectedTileY) {
+
+		selectedTileX = x;
+		selectedTileY = y;
+		selectedEntityIndex = 0;
+
+	} else {
+
+		selectedEntityIndex++;
+
+	}
+
+
+	isTileSelected = true;
 	
 }
 
+void moveEntity(int targetX, int targetY, Entity* entity) {
+	if (!isInWorldBounds(targetX, targetY)) {
+		return;
+	}
+
+	entity->x = targetX;
+	entity->y = targetY;
+
+
+	entityEnteredTile(targetX, targetY, entity);
+}
+
+
+Entity* getEntityOnTile(int tileX, int tileY, int entityIndex) {
+	Entity* results[10] = {0};
+	int resultCount = 0;
+
+	for (unsigned int i = 0; i < entities.count; i++) {
+		Entity* entity = &entities.elements[i];
+
+		if (entity->x == tileX && entity->y == tileY) {
+			results[resultCount] = entity;
+			resultCount++;
+			if (resultCount >= 10) {
+				break;
+			}
+		}
+	}
+	if (resultCount == 0) {
+		return NULL;
+	}
+
+	return results[entityIndex % resultCount];
+}
+
+void moveCommand(int targetX, int targetY) {
+	if (!isInWorldBounds(targetX, targetY) || !isTileSelected) {
+		return;
+	}
+
+	Entity* entity = getEntityOnTile(selectedTileX, selectedTileY, selectedEntityIndex);
+
+	if (entity == NULL) {
+		printf("selected entity is null\n");
+		return;
+	}
+
+	moveEntity(targetX, targetY, entity);
+	selectTile(targetX, targetY);
+}
+
+
+int cursorMode = 0;
+char* modelLabels[] = {"reveal mode", "select mode", "move mode"};
 void updateCursor() {
 	
 	// draw mouse
 	spr("ground_tiles_0006", cursor->worldX - camera->x, cursor->worldY - camera->y, 2);
 	
+	// draw selected indicator
+	if (isTileSelected) {
+		Vector2 pos = resolveScreenPosition(selectedTileX, selectedTileY);
+		 
+		spr("ground_tiles_0006", pos.x, pos.y, 1);
+	}
+
+	drawText(modelLabels[cursorMode], 10, 10, 1, WHITE);
+
+
+	if (IsKeyPressed(KEY_ONE)) {
+		cursorMode = 0;
+	} else if (IsKeyPressed(KEY_TWO)) {
+		cursorMode = 1;
+	} else if (IsKeyPressed(KEY_THREE)) {
+		cursorMode = 2;
+	}
 
 	// clicking
 	if (IsMouseButtonPressed(0)) {
-		revealTilesInRadius(cursor->boardX, cursor->boardY, 3);
-		/*
-		// above row
-		for (int targetX = cursor->boardX; targetX <= cursor->boardX + 1; targetX++) {
-			discoverTile(targetX, cursor->boardY - 1);
-		}
-		
-		// middle row
-		for (int targetX = cursor->boardX - 1; targetX <= cursor->boardX + 1; targetX++) {
-			discoverTile(targetX, cursor->boardY);
-		}
+	
+		switch (cursorMode) {
+			case 0:
+				revealTilesInRadius(cursor->boardX, cursor->boardY, 2);
+				break;
+			case 1:
+				selectTile(cursor->boardX, cursor->boardY);
+				break;
+			case 2:
+				moveCommand(cursor->boardX, cursor->boardY);
+				break;
 
-		
-		// bottom row
-		for (int targetX = cursor->boardX - 1; targetX < cursor->boardX + 1; targetX++) {
-			discoverTile(targetX, cursor->boardY + 1);
-		}*/
+		}
+	
+
 	}
 }
 
@@ -228,6 +331,7 @@ int main(void){
 	initNewBoard(20, 20);
 	// spawn debug guy
 	createEntity(0, 0, "pieces_0006");
+	createEntity(0, 1, "pieces_0007");
 
 	tempWorldGeneration();
 
