@@ -152,8 +152,22 @@ Vector2 resolveScreenPosition(float gridX, float gridY) {
 }
 
 int getTileDistance(int startX, int startY, int endX, int endY) {
-	return abs(startX - endX) + abs(startY - endY);
+
+	// convert from axial coordinates to cube coordinates
+	// then calculate the distance
+	// this works because we asume that x+y+z=0
+
+	int startZ = -startX -startY;
+	int endZ = -endX -endY;
+	
+
+	return (
+		abs(startX - endX) + 
+		abs(startY - endY) +
+		abs(startZ - endZ)
+	) / 2;
 }
+
 
 // -------------------------------------------------------------------------------------
 // Struct handles

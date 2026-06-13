@@ -163,7 +163,12 @@ void moveCommand(int targetX, int targetY) {
 		return;
 	}
 
-	if (getTileDistance(targetX, targetY, entity->x, entity->y) > entity->moveDistance) {
+	int distance = getTileDistance(targetX, targetY, entity->x, entity->y);
+
+
+	printf("calculating distance [%d, %d] -> [%d, %d] = %d\n", entity->x, entity->y, targetX, targetY, distance);
+
+	if (getTileDistance(entity->x, entity->y, targetX, targetY) > entity->moveDistance) {
 		printf("cant move that far\n");
 		return;
 	}
