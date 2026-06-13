@@ -50,7 +50,7 @@ void initNewBoard(int width, int height){
 				.tileDecorationSprite = NULL,
 				.x = x, 
 				.y = y, 
-				.discovered = false 
+				.visibility = UNDISCOVERED, 
 			};
 			
 		}
@@ -59,61 +59,10 @@ void initNewBoard(int width, int height){
 }
 
 
+
 // -------------------------------------------------------------------------------------
-// World update
+// Utility functions
 // -------------------------------------------------------------------------------------
-void updateWorld() {
-	// draw world
-	for (int x = 0; x < board.boardWidth; x++) {
-		for (int y = 0; y < board.boardHeight; y++) {
-			// draw main tile
-			WorldTile* tile = &world[x][y];
-		
-			char* sprite;
-
-			if (tile->discovered) {
-				sprite = tile->tileSprite; 
-			} else {
-				sprite = "ground_tiles_0005";
-			}
-
-			Vector2 screenPosition = resolveScreenPosition(x, y); 
-
-			spr(sprite, screenPosition.x, screenPosition.y, 0);
-
-			// draw object
-			if (tile->tileDecorationSprite == NULL || !tile->discovered) {
-				continue;
-			}
-
-			spr(tile->tileDecorationSprite, screenPosition.x, screenPosition.y, 1);
-		}
-	}
-
-	// update cursor
-	Vector2 mousePos = getMousePosition();
-
-	int boardMouseX = round((mousePos.x + camera.x) / TILE_WIDTH);
-	float yOffset = (boardMouseX * ODD_TILE_OFFSET); 
-	int boardMouseY = round((mousePos.y - yOffset + camera.y) / TILE_HEIGHT);
-	float worldMouseX = ((float)boardMouseX) * TILE_WIDTH;
-	float worldMouseY = ((float)boardMouseY) * TILE_HEIGHT + yOffset;
-
-
-	cursor.screenX = mousePos.x;
-	cursor.screenY = mousePos.y;
-	cursor.worldX = worldMouseX;
-	cursor.worldY = worldMouseY;
-	cursor.boardX = boardMouseX;
-	cursor.boardY = boardMouseY;
-
-	if (isInWorldBounds(cursor.boardX, cursor.boardY)) {
-		cursor.hoveredTile = getWorldTile(cursor.boardX, cursor.boardY); 
-	}
-
-}
-
-
 bool isInWorldBounds(int x, int y) {
 	return x >= 0 && y >= 0 && x < board.boardWidth && y < board.boardHeight;
 }
@@ -131,16 +80,22 @@ void setWorldTile(int x, int y, char* tileSprite, char* tileDecorationSprite) {
 	tile->tileDecorationSprite = tileDecorationSprite;
 }
 
-void discoverTile(int x, int y) {
+void discoverTile(int x, int y, bool observe) {
 	if (!isInWorldBounds(x, y)) return;
 	
 	WorldTile* tile = getWorldTile(x, y);
-	tile->discovered = true;
+	
+	
+	tile->visibility = observe ? OBSERVED : max(DISCOVERED, tile->visibility);
 }
 
 
 bool isTileDiscovered(int x, int y){
-	return getWorldTile(x, y)->discovered;
+	return getWorldTile(x, y)->visibility != UNDISCOVERED;
+}
+
+TileVisibility getTileVisibility(int x, int y) {
+	return getWorldTile(x, y)->visibility;
 }
 
 
@@ -166,6 +121,97 @@ int getTileDistance(int startX, int startY, int endX, int endY) {
 		abs(startY - endY) +
 		abs(startZ - endZ)
 	) / 2;
+}
+
+// -------------------------------------------------------------------------------------
+// World update
+// -------------------------------------------------------------------------------------
+void updateWorld() {
+	// draw world
+	for (int x = 0; x < board.boardWidth; x++) {
+		for (int y = 0; y < board.boardHeight; y++) {
+			// draw main tile
+			WorldTile* tile = &world[x][y];
+		
+			char* sprite;
+			
+			Color tileColor = WHITE;
+
+			if (tile->visibility != UNDISCOVERED) {
+				sprite = tile->tileSprite;
+
+				if (tile->visibility == DISCOVERED) {
+					tileColor = GRAY;
+				}
+
+			} else {
+				sprite = "ground_tiles_0005";
+			}
+
+			Vector2 screenPosition = resolveScreenPosition(x, y); 
+
+			sprFRC(
+				sprite, 
+				screenPosition.x, 
+				screenPosition.y, 
+				false, 
+				false, 
+				0.0f, 
+				tileColor, 
+				0
+			);
+
+			// draw object
+			if (tile->tileDecorationSprite == NULL || tile->visibility == UNDISCOVERED) {
+				continue;
+			}
+
+			sprFRC(
+				tile->tileDecorationSprite, 
+				screenPosition.x, 
+				screenPosition.y, 
+				false, 
+				false, 
+				0.0f, 
+				tileColor,
+				1
+			);
+		}
+	}
+
+	// update cursor
+	Vector2 mousePos = getMousePosition();
+
+	int boardMouseX = round((mousePos.x + camera.x) / TILE_WIDTH);
+	float yOffset = (boardMouseX * ODD_TILE_OFFSET); 
+	int boardMouseY = round((mousePos.y - yOffset + camera.y) / TILE_HEIGHT);
+	float worldMouseX = ((float)boardMouseX) * TILE_WIDTH;
+	float worldMouseY = ((float)boardMouseY) * TILE_HEIGHT + yOffset;
+
+
+	cursor.screenX = mousePos.x;
+	cursor.screenY = mousePos.y;
+	cursor.worldX = worldMouseX;
+	cursor.worldY = worldMouseY;
+	cursor.boardX = boardMouseX;
+	cursor.boardY = boardMouseY;
+
+	if (isInWorldBounds(cursor.boardX, cursor.boardY)) {
+		cursor.hoveredTile = getWorldTile(cursor.boardX, cursor.boardY); 
+	}
+}
+
+
+void updateBoardState() {
+	for (int x = 0; x < board.boardWidth; x++) {
+		for (int y = 0; y < board.boardHeight; y++) {
+			WorldTile* tile = &world[x][y];
+
+			if (tile->visibility == OBSERVED) {
+				tile->visibility = DISCOVERED;
+			}
+		}
+	}
 }
 
 

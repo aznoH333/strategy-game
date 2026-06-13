@@ -7,12 +7,19 @@
 // -------------------------------------------------------------------------------------
 // Structs
 // -------------------------------------------------------------------------------------
+typedef enum {
+	UNDISCOVERED,
+	DISCOVERED,
+	OBSERVED
+} TileVisibility;
+
+
 typedef struct {
 	char* tileSprite;
 	char* tileDecorationSprite;
 	int x;
 	int y;
-	bool discovered;
+	TileVisibility visibility;
 } WorldTile;
 
 
@@ -40,15 +47,22 @@ typedef struct {
 
 
 // -------------------------------------------------------------------------------------
+// World updates
+// -------------------------------------------------------------------------------------
+void updateWorld(); // draws the world and updates the cursor position
+void updateBoardState(); // updates the world observation state (makes previously observerd tiles undiscovered)
+
+
+// -------------------------------------------------------------------------------------
 // Functions
 // -------------------------------------------------------------------------------------
 void initNewBoard(int width, int height);
-void updateWorld();
 bool isInWorldBounds(int x, int y);
 WorldTile* getWorldTile(int x, int y);
 void setWorldTile(int x, int y, char* tileSprite, char* tileDecorationSprite);
-void discoverTile(int x, int y);
+void discoverTile(int x, int y, bool observe);
 bool isTileDiscovered(int x, int y);
+TileVisibility getTileVisibility(int x, int y);
 Vector2 resolveScreenPosition(float gridX, float gridY);
 int getTileDistance(int startX, int startY, int endX, int endY);
 

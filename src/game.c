@@ -21,7 +21,7 @@ typedef struct {
 	int y;
 	char* sprite;
 	char* name;
-	bool revealTiles;
+	int revealRadius;
 	int moveDistance;
 } Entity;
 
@@ -41,26 +41,44 @@ void updateEntities() {
 }
 
 
+
 void revealTilesInRadius(int x, int y, int radius) {
+
 	for (int xi = -radius; xi <= radius; xi++) {
 		for (int yi = -radius; yi <= radius; yi++) {
-			if (yi + xi <  -radius + (radius * (int)(3.0f / 4.0f))) {
+
+
+			int distance = getTileDistance(x, y, xi + x, yi + y);
+
+			if (distance > radius) {
 				continue;
 			}
 
-
-			if (yi + xi > radius - (radius * (int)(3.0f / 4.0f))) {
-				continue;
-			}
-			discoverTile(xi + x, yi + y);
+			discoverTile(xi + x, y + yi, distance < radius);
 		}
 	}
 }
 
-void entityEnteredTile(int tileX, int tileY, Entity* entity) {
-	if (entity->revealTiles) {
-		revealTilesInRadius(tileX, tileY, 2);	
+
+
+void initiateBoardUpdate() {
+	
+	updateBoardState();
+
+	for ( unsigned int i = 0; i < entities.count; i++ ) {
+		Entity* entity = &ArrayGet(entities, i);
+		
+		revealTilesInRadius(entity->x, entity->y, entity->revealRadius);
+
 	}
+}
+
+void entityEnteredTile(int tileX, int tileY, Entity* entity) {
+	if (entity->revealRadius > 0) {
+		revealTilesInRadius(tileX, tileY, entity->revealRadius);	
+	}
+
+	initiateBoardUpdate();
 }
 
 
@@ -69,17 +87,17 @@ void createEntity(
 	int y, 
 	char* sprite,
 	char* name,
-	int moveDistance
+	int moveDistance,
+	int revealRadius
 ) {
 	ArrayPush(entities, ((Entity)
 		{
 			.x = x, 
 			.y = y, 
 			.sprite = sprite, 
-			.revealTiles = true,
 			.name = name,
-			.moveDistance = moveDistance
-
+			.moveDistance = moveDistance,
+			.revealRadius = revealRadius
 		}));
 	Entity* addedEntity = &entities.elements[entities.count-1];
 	entityEnteredTile(x, y, addedEntity);
@@ -213,7 +231,7 @@ void updateCursor() {
 	
 		switch (cursorMode) {
 			case 0:
-				revealTilesInRadius(cursor->boardX, cursor->boardY, 2);
+				revealTilesInRadius(cursor->boardX, cursor->boardY, 5);
 				break;
 			case 1:
 				selectTile(cursor->boardX, cursor->boardY);
@@ -277,8 +295,8 @@ int main(void){
 
 	generateNewMap(20, 20);
 	// spawn debug guy
-	createEntity(0, 0, "pieces_0006", "red guy", 5);
-	createEntity(0, 1, "pieces_0007", "blue guy", 2);
+	createEntity(0, 0, "pieces_0006", "red guy", 2, 4);
+	createEntity(0, 1, "pieces_0007", "blue guy", 2, 3);
 
 	while (!WindowShouldClose()){
 		updateWorld();
