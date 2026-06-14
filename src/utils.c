@@ -5,17 +5,31 @@
 // -------------------------------------------------------------------------------------
 // Hashmap
 // -------------------------------------------------------------------------------------
-unsigned int hashString(char* name) {
-	unsigned int output = 1;
+unsigned long hashString(char* name) {
+	const unsigned long FNV_OFFSET = 0xCBF29CE484222325ULL;
+	const unsigned long FNV_PRIME  = 0x100000001B3ULL;
+
+	unsigned long hash = FNV_OFFSET;
 
 	int i = 0;
 
 	while (name[i]) {
-		output += name[i] * name[i-1 + (i == 0)];
+		char value = name[i];
+		
+		
+		// use fnv hash
+		for (int shift = 24; shift >= 0; shift -= 8) {
+			unsigned char byte = (unsigned char)((value >> shift) & 0xFF);
+
+
+			hash ^= byte;
+			hash *= FNV_PRIME;
+		}
+
 		++i;
 	}
 
-	return output % HASH_MAP_SIZE;
+	return hash % HASH_MAP_SIZE;
 }
 
 

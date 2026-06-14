@@ -21,7 +21,7 @@
 // -------------------------------------------------------------------------------------
 // Hashmap
 // -------------------------------------------------------------------------------------
-unsigned int hashString(char* name);
+unsigned long hashString(char* name);
 
 #define HASH_MAP_SIZE 512
 #define GenHashmapDefinition(type, hashMapStructName) typedef struct { 	\
