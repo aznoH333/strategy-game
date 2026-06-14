@@ -24,7 +24,7 @@ void updateCursor() {
 	if (entityCursor->isTileSelected) {
 		Vector2 pos = resolveScreenPosition(entityCursor->selectedTileX, entityCursor->selectedTileY);
 		 
-		spr("ground_tiles_0006", pos.x, pos.y, 1);
+		spr("ground_tiles_0008", pos.x, pos.y, 1);
 	}
 	
 
