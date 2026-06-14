@@ -65,7 +65,7 @@ bool isTileDiscovered(int x, int y);
 TileVisibility getTileVisibility(int x, int y);
 Vector2 resolveScreenPosition(float gridX, float gridY);
 int getTileDistance(int startX, int startY, int endX, int endY);
-
+void revealTilesInRadius(int x, int y, int radius);
 
 // -------------------------------------------------------------------------------------
 // Struct handles

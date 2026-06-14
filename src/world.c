@@ -123,6 +123,24 @@ int getTileDistance(int startX, int startY, int endX, int endY) {
 	) / 2;
 }
 
+void revealTilesInRadius(int x, int y, int radius) {
+
+	for (int xi = -radius; xi <= radius; xi++) {
+		for (int yi = -radius; yi <= radius; yi++) {
+
+
+			int distance = getTileDistance(x, y, xi + x, yi + y);
+
+			if (distance > radius) {
+				continue;
+			}
+
+			discoverTile(xi + x, y + yi, distance < radius);
+		}
+	}
+}
+
+
 // -------------------------------------------------------------------------------------
 // World update
 // -------------------------------------------------------------------------------------
