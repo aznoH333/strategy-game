@@ -14,11 +14,188 @@ WorldCursor* cursor;
 BoardHandle* boardHandle;
 EntityCursorHandle* entityCursor;
 
+typedef struct {
+	int x;
+	int y;
+} PathDirection;
+
+typedef struct {
+	int x;
+	int y;
+	int prevX;
+	int prevY;
+	int prevIndex;
+	bool exhausted;
+} SearchNode;
+
+bool pathReached = false;
+int pathStartX = 0;
+int pathStartY = 0;
+int pathEndX = 0;
+int pathEndY = 0;
+bool pathExists = false;
+PathDirection pathNodes[20];
+int pathNodeCount = 0;
+
+
+void drawPath() {
+
+	int x = pathStartX;
+	int y = pathStartY;
+
+	for (int i = 0; i < pathNodeCount; i++ ) {
+		spr("ground_tiles_0007", x, y, 8);
+
+		PathDirection direction = pathNodes[i];
+
+		x += direction.x;
+		y += direction.y;
+	}
+}
+
+
+void startPath(int startX, int startY, int endX, int endY) {
+	pathExists = true;
+
+	pathStartX = startX;
+	pathStartY = startY;
+	pathEndX = endX;
+	pathEndY = endY;
+	
+	pathNodeCount = 0;
+
+	// build path
+	int searchNodeCount = 1;
+	SearchNode searchNodes[100];
+	searchNodes[0] = (SearchNode) { .x = startX, .y = startY, .prevX = -1, .prevY = -1, .prevIndex = -1, .exhausted = false };
+	int finalSearchNodeIndex = -1;
+
+	while (searchNodeCount < 100) {
+		// find best node to expand
+		int bestExpansionCandidateIndex = -1;
+		int bestDistance = 9999;
+
+		for (int i = 0; i < searchNodeCount; i++) {
+			if (searchNodes[i].exhausted) {
+				continue;
+			}
+
+			int distance = getTileDistance(searchNodes[i].x, searchNodes[i].y, endX, endY);
+
+			if (distance < bestDistance) {
+				bestDistance = distance;
+				bestExpansionCandidateIndex = i;
+			}
+		}
+
+
+		if (bestExpansionCandidateIndex == -1) {
+			return; // no path found
+		}
+
+
+		// expand node
+		SearchNode* currentNode = &searchNodes[bestExpansionCandidateIndex];
+		currentNode->exhausted = true;
+
+		if (currentNode->x == endX && currentNode->y == endY) {
+			finalSearchNodeIndex = bestExpansionCandidateIndex;
+			goto reached_end;
+		}
+
+
+		const int directions[6][2] = { // list of all the hexagonal directions (clockwise)
+			{  0, -1 },
+			{  1, -1 },
+			{  1,  0 },
+			{  0,  1 },
+			{ -1,  1 },
+			{ -1,  0 }
+		};
+
+
+		for (int i = 0; i < 6; i++) {
+			int direction[2] = { directions[i][0], directions[i][1] };
+			int newNodeX = currentNode->x + direction[0];
+			int newNodeY = currentNode->y + direction[1];
+
+
+			WorldTile* currentTile = getWorldTile(newNodeX, newNodeY);
+
+			if (currentTile->terrainType != LAND) {
+				skip_cycle:
+				continue;
+			}
+
+			// look if node already exists
+			for (int j = 0; j < searchNodeCount; j++) {
+				if (searchNodes[i].x == newNodeX && searchNodes[i].y == newNodeY) {
+					goto skip_cycle;
+				}
+			}
+
+
+			// make new node
+			searchNodes[searchNodeCount++] = (SearchNode) {
+				.x = newNodeX,
+				.y = newNodeY,
+				.prevX = currentNode->x,
+				.prevY = currentNode->y,
+				.prevIndex = bestExpansionCandidateIndex, 
+				.exhausted = false
+
+			};
+			
+
+		}
+
+
+	}
+
+	// failed to find node
+	return;
+	
+	reached_end:
+	SearchNode* currentNode = &searchNodes[finalSearchNodeIndex];
+	
+	PathDirection tempPathNodes[20];
+	int tempPathNodeCount = 0;
+
+	while (currentNode->prevIndex != -1) {
+		tempPathNodes[tempPathNodeCount++] = (PathDirection) {
+			.x = currentNode->x - currentNode->prevX,
+			.y = currentNode->y - currentNode->prevY
+		};
+
+		currentNode = &searchNodes[currentNode->prevIndex];
+	}
+
+	// copy to output
+
+	pathNodeCount = tempPathNodeCount;
+	for (int i = 0; i < pathNodeCount; i++) {
+		pathNodes[i] = tempPathNodes[pathNodeCount - i - 1];
+	}
+}
+
+
 int cursorMode = 0;
 char* modelLabels[] = {"reveal mode", "select mode", "move mode"};
 void updateCursor() {
 	// draw mouse
-	spr("ground_tiles_0006", cursor->worldX - camera->x, cursor->worldY - camera->y, 2);
+	if (isInWorldBounds(cursor->boardX, cursor->boardY)) {
+		
+		WorldTile* tile = getWorldTile(cursor->boardX, cursor->boardY);
+
+		char* cursorSprite = "ground_tiles_0006";
+
+		if (tile->terrainType != LAND) {
+			cursorSprite = "ground_tiles_0009";
+		}
+
+		spr(cursorSprite, cursor->worldX - camera->x, cursor->worldY - camera->y, 2);
+	}
+	drawPath();
 	
 	// draw selected indicator
 	if (entityCursor->isTileSelected) {
@@ -54,6 +231,7 @@ void updateCursor() {
 				selectTile(cursor->boardX, cursor->boardY);
 				break;
 			case 2:
+				startPath(entityCursor->selectedTileX, entityCursor->selectedTileY, cursor->boardX, cursor->boardY);
 				moveCommand(cursor->boardX, cursor->boardY);
 				break;
 
@@ -112,8 +290,8 @@ int main(void){
 
 	generateNewMap(20, 20);
 	// spawn debug guy
-	createEntity(0, 0, "pieces_0006", "red guy", 2, 4);
-	createEntity(0, 1, "pieces_0007", "blue guy", 2, 3);
+	createEntity(5, 5, "pieces_0006", "red guy", 2, 4);
+	createEntity(10, 10, "pieces_0007", "blue guy", 3, 5);
 
 	while (!WindowShouldClose()){
 		updateWorld();

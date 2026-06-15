@@ -50,7 +50,8 @@ void initNewBoard(int width, int height){
 				.tileDecorationSprite = NULL,
 				.x = x, 
 				.y = y, 
-				.visibility = UNDISCOVERED, 
+				.visibility = UNDISCOVERED,
+				.terrainType = LAND
 			};
 			
 		}
@@ -71,13 +72,14 @@ WorldTile* getWorldTile(int x, int y) {
 	return &world[x][y];
 }
 
-void setWorldTile(int x, int y, char* tileSprite, char* tileDecorationSprite) {
+void setWorldTile(int x, int y, char* tileSprite, char* tileDecorationSprite, TerrainType terrainType) {
 	if (!isInWorldBounds(x, y)) return;
 		
 	WorldTile* tile = getWorldTile(x, y);
 
 	tile->tileSprite = tileSprite;
 	tile->tileDecorationSprite = tileDecorationSprite;
+	tile->terrainType = terrainType;
 }
 
 void discoverTile(int x, int y, bool observe) {

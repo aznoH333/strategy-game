@@ -69,6 +69,12 @@ void generateNewMap(int width, int height){
 			int noiseValue = (int) floor(getNoise(x, y, 8.0f) * 4.0f) + 0;
 
 			char* piece = NULL;
+			
+			TerrainType type = LAND;
+
+			if (noiseValue == 0) {
+				type = WATER;
+			}
 
 			if (noiseValue == 2 && randomChance(0.65f)) {
 				piece = pieces[GetRandomValue(2, 3)];
@@ -80,10 +86,11 @@ void generateNewMap(int width, int height){
 
 			if (noiseValue == 3 && randomChance(0.85f)) {
 				piece = pieces[GetRandomValue(0, 1)];
+				type = MOUNTAIN;
 			}
 
 
-			setWorldTile(x, y, tiles[noiseValue], piece);
+			setWorldTile(x, y, tiles[noiseValue], piece, type);
 		}
 	}
 }

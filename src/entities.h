@@ -2,6 +2,7 @@
 #define ENTITIES
 
 #include "stdbool.h"
+#include "world.h"
 
 typedef struct {
 	int x;

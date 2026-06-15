@@ -14,12 +14,20 @@ typedef enum {
 } TileVisibility;
 
 
+typedef enum {
+	WATER,
+	LAND,
+	MOUNTAIN
+} TerrainType;
+
+
 typedef struct {
 	char* tileSprite;
 	char* tileDecorationSprite;
 	int x;
 	int y;
 	TileVisibility visibility;
+	TerrainType terrainType;
 } WorldTile;
 
 
@@ -59,7 +67,7 @@ void updateBoardState(); // updates the world observation state (makes previousl
 void initNewBoard(int width, int height);
 bool isInWorldBounds(int x, int y);
 WorldTile* getWorldTile(int x, int y);
-void setWorldTile(int x, int y, char* tileSprite, char* tileDecorationSprite);
+void setWorldTile(int x, int y, char* tileSprite, char* tileDecorationSprite, TerrainType terrainType);
 void discoverTile(int x, int y, bool observe);
 bool isTileDiscovered(int x, int y);
 TileVisibility getTileVisibility(int x, int y);
