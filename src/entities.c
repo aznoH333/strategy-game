@@ -151,17 +151,13 @@ void moveCommand(int targetX, int targetY) {
 	Entity* entity = getEntityOnTile(entityCursor.selectedTileX, entityCursor.selectedTileY, entityCursor.selectedEntityIndex);
 
 	if (entity == NULL) {
-		printf("selected entity is null\n");
 		return;
 	}
 
 	int distance = getTileDistance(targetX, targetY, entity->x, entity->y);
 
 
-	printf("calculating distance [%d, %d] -> [%d, %d] = %d\n", entity->x, entity->y, targetX, targetY, distance);
-
 	if (getTileDistance(entity->x, entity->y, targetX, targetY) > entity->moveDistance) {
-		printf("cant move that far\n");
 		return;
 	}
 

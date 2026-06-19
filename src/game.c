@@ -39,21 +39,29 @@ int pathNodeCount = 0;
 
 
 void drawPath() {
+	if (!pathExists) {
+		return;
+	}
 
 	int x = pathStartX;
 	int y = pathStartY;
 
 	for (int i = 0; i < pathNodeCount; i++ ) {
-		spr("ground_tiles_0007", x, y, 8);
+
+		
+		Vector2 pos = resolveScreenPosition(x, y);
+		
+		spr("ground_tiles_0007", pos.x, pos.y, 7);
 
 		PathDirection direction = pathNodes[i];
 
+		
 		x += direction.x;
 		y += direction.y;
 	}
 }
 
-
+#define MAX_PATH_FIND_ATTEMPTS 100
 void startPath(int startX, int startY, int endX, int endY) {
 	pathExists = true;
 
@@ -66,11 +74,12 @@ void startPath(int startX, int startY, int endX, int endY) {
 
 	// build path
 	int searchNodeCount = 1;
-	SearchNode searchNodes[100];
+	SearchNode searchNodes[MAX_PATH_FIND_ATTEMPTS];
 	searchNodes[0] = (SearchNode) { .x = startX, .y = startY, .prevX = -1, .prevY = -1, .prevIndex = -1, .exhausted = false };
 	int finalSearchNodeIndex = -1;
 
-	while (searchNodeCount < 100) {
+
+	while (searchNodeCount < MAX_PATH_FIND_ATTEMPTS) {
 		// find best node to expand
 		int bestExpansionCandidateIndex = -1;
 		int bestDistance = 9999;
@@ -90,13 +99,14 @@ void startPath(int startX, int startY, int endX, int endY) {
 
 
 		if (bestExpansionCandidateIndex == -1) {
-			return; // no path found
+			goto failed_to_find_path; // no path found
 		}
 
 
 		// expand node
 		SearchNode* currentNode = &searchNodes[bestExpansionCandidateIndex];
 		currentNode->exhausted = true;
+
 
 		if (currentNode->x == endX && currentNode->y == endY) {
 			finalSearchNodeIndex = bestExpansionCandidateIndex;
@@ -129,7 +139,7 @@ void startPath(int startX, int startY, int endX, int endY) {
 
 			// look if node already exists
 			for (int j = 0; j < searchNodeCount; j++) {
-				if (searchNodes[i].x == newNodeX && searchNodes[i].y == newNodeY) {
+				if (searchNodes[j].x == newNodeX && searchNodes[j].y == newNodeY) {
 					goto skip_cycle;
 				}
 			}
@@ -145,6 +155,10 @@ void startPath(int startX, int startY, int endX, int endY) {
 				.exhausted = false
 
 			};
+
+			if (searchNodeCount >= MAX_PATH_FIND_ATTEMPTS) {
+				goto failed_to_find_path;
+			}
 			
 
 		}
@@ -152,6 +166,9 @@ void startPath(int startX, int startY, int endX, int endY) {
 
 	}
 
+
+	failed_to_find_path:
+	pathExists = false;
 	// failed to find node
 	return;
 	
@@ -174,7 +191,11 @@ void startPath(int startX, int startY, int endX, int endY) {
 
 	pathNodeCount = tempPathNodeCount;
 	for (int i = 0; i < pathNodeCount; i++) {
-		pathNodes[i] = tempPathNodes[pathNodeCount - i - 1];
+
+		pathNodes[i] = (PathDirection) {
+			.x = tempPathNodes[pathNodeCount - i - 1].x,
+			.y = tempPathNodes[pathNodeCount - i - 1].y
+		};
 	}
 }
 
@@ -231,13 +252,15 @@ void updateCursor() {
 				selectTile(cursor->boardX, cursor->boardY);
 				break;
 			case 2:
-				startPath(entityCursor->selectedTileX, entityCursor->selectedTileY, cursor->boardX, cursor->boardY);
 				moveCommand(cursor->boardX, cursor->boardY);
 				break;
 
-		}
-	
+		}	
+	}
 
+
+	if (cursorMode == 2) {
+			startPath(entityCursor->selectedTileX, entityCursor->selectedTileY, cursor->boardX, cursor->boardY);
 	}
 }
 
