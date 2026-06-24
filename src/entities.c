@@ -154,12 +154,12 @@ void moveCommand(int targetX, int targetY) {
 		return;
 	}
 
-	int distance = getTileDistance(targetX, targetY, entity->x, entity->y);
+	// int distance = getTileDistance(targetX, targetY, entity->x, entity->y);
 
 
-	if (getTileDistance(entity->x, entity->y, targetX, targetY) > entity->moveDistance) {
-		return;
-	}
+	// if (getTileDistance(entity->x, entity->y, targetX, targetY) > entity->moveDistance) {
+	//	return;
+	// }
 
 	moveEntity(targetX, targetY, entity);
 	selectTile(targetX, targetY);

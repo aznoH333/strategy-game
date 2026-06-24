@@ -28,18 +28,28 @@ typedef struct {
 	bool exhausted;
 } SearchNode;
 
+
+
+typedef enum {
+	INVALID,
+	TOO_LONG,
+	EXISTS
+} PathState;
+
+
+
 bool pathReached = false;
 int pathStartX = 0;
 int pathStartY = 0;
 int pathEndX = 0;
 int pathEndY = 0;
-bool pathExists = false;
+PathState pathState = INVALID;
 PathDirection pathNodes[20];
 int pathNodeCount = 0;
+int validPathLength = 0;
 
-
-void drawPath() {
-	if (!pathExists) {
+void drawPath(int startingIndex) {
+	if (pathState == INVALID) {
 		return;
 	}
 
@@ -51,7 +61,14 @@ void drawPath() {
 		
 		Vector2 pos = resolveScreenPosition(x, y);
 		
-		spr("ground_tiles_0007", pos.x, pos.y, 7);
+
+		if (i > startingIndex) {
+			if (i > validPathLength) {
+				spr("ground_tiles_0006", pos.x, pos.y, 7);
+			} else {
+				spr("ground_tiles_0007", pos.x, pos.y, 7);
+			}
+		}
 
 		PathDirection direction = pathNodes[i];
 
@@ -62,8 +79,8 @@ void drawPath() {
 }
 
 #define MAX_PATH_FIND_ATTEMPTS 100
-void startPath(int startX, int startY, int endX, int endY) {
-	pathExists = true;
+void startPath(int startX, int startY, int endX, int endY, int maxPathLength) {
+	pathState = EXISTS;
 
 	pathStartX = startX;
 	pathStartY = startY;
@@ -71,6 +88,7 @@ void startPath(int startX, int startY, int endX, int endY) {
 	pathEndY = endY;
 	
 	pathNodeCount = 0;
+	validPathLength = 0;
 
 	// build path
 	int searchNodeCount = 1;
@@ -168,7 +186,7 @@ void startPath(int startX, int startY, int endX, int endY) {
 
 
 	failed_to_find_path:
-	pathExists = false;
+	pathState = INVALID;
 	// failed to find node
 	return;
 	
@@ -197,11 +215,64 @@ void startPath(int startX, int startY, int endX, int endY) {
 			.y = tempPathNodes[pathNodeCount - i - 1].y
 		};
 	}
+
+	if (pathNodeCount > maxPathLength) {
+		pathState = TOO_LONG;
+	}
+
+	validPathLength = min(pathNodeCount, maxPathLength);
 }
 
 
-int cursorMode = 0;
-char* modelLabels[] = {"reveal mode", "select mode", "move mode"};
+char* cursorModeLabels[] = {"select mode", "move mode", "waiting"};
+typedef enum {
+	SELECT_MODE,
+	MOVE_MODE,
+	WAITING
+} CursorState;
+
+
+
+CursorState cursorMode = SELECT_MODE;
+int mapMovementTimer = 0;
+int pathMovementIndex = 0;
+#define MOVEMENT_ANIMATION_SPEED 6
+void moveSelectedAlongPath() {
+	if (pathState == INVALID) {
+		return;
+	}
+
+	cursorMode = WAITING;
+	mapMovementTimer = MOVEMENT_ANIMATION_SPEED;
+	pathMovementIndex = 0;
+
+}
+
+
+void updateIdleAction() {
+	
+
+	mapMovementTimer--;
+	drawPath(pathMovementIndex);
+
+	if (mapMovementTimer > 0) {
+		return;
+	}
+
+	mapMovementTimer = MOVEMENT_ANIMATION_SPEED;
+		
+	Entity* selectedEntity = entityCursor->selectedEntity;
+
+	PathDirection* path = &pathNodes[pathMovementIndex];
+	pathMovementIndex++;
+	moveCommand(selectedEntity->x + path->x, selectedEntity->y + path->y);
+
+	if (pathMovementIndex >= validPathLength) {
+		cursorMode = MOVE_MODE;
+	}
+}
+
+
 void updateCursor() {
 	// draw mouse
 	if (isInWorldBounds(cursor->boardX, cursor->boardY)) {
@@ -216,7 +287,6 @@ void updateCursor() {
 
 		spr(cursorSprite, cursor->worldX - camera->x, cursor->worldY - camera->y, 2);
 	}
-	drawPath();
 	
 	// draw selected indicator
 	if (entityCursor->isTileSelected) {
@@ -226,7 +296,7 @@ void updateCursor() {
 	}
 	
 
-	drawText(modelLabels[cursorMode], 10, 10, 1, WHITE);
+	drawText(cursorModeLabels[cursorMode], 10, 10, 1, WHITE);
 	
 	if ( entityCursor->selectedEntity != NULL ) {
 		drawText(entityCursor->selectedEntity->name, 10, 32, 1, WHITE);
@@ -234,33 +304,29 @@ void updateCursor() {
 
 
 	if (IsKeyPressed(KEY_ONE)) {
-		cursorMode = 0;
+		cursorMode = SELECT_MODE;
 	} else if (IsKeyPressed(KEY_TWO)) {
-		cursorMode = 1;
-	} else if (IsKeyPressed(KEY_THREE)) {
-		cursorMode = 2;
-	}
+		cursorMode = MOVE_MODE;
+	} 
 
 	// clicking
 	if (IsMouseButtonPressed(0)) {
 	
 		switch (cursorMode) {
-			case 0:
-				revealTilesInRadius(cursor->boardX, cursor->boardY, 5);
-				break;
-			case 1:
+			case SELECT_MODE:
 				selectTile(cursor->boardX, cursor->boardY);
 				break;
-			case 2:
-				moveCommand(cursor->boardX, cursor->boardY);
+			case MOVE_MODE:
+				moveSelectedAlongPath();
 				break;
 
 		}	
 	}
 
 
-	if (cursorMode == 2) {
-			startPath(entityCursor->selectedTileX, entityCursor->selectedTileY, cursor->boardX, cursor->boardY);
+	if (cursorMode == MOVE_MODE && entityCursor->selectedEntity != NULL) {
+		startPath(entityCursor->selectedTileX, entityCursor->selectedTileY, cursor->boardX, cursor->boardY, entityCursor->selectedEntity->moveDistance);
+		drawPath(0);
 	}
 }
 
@@ -269,7 +335,11 @@ void updateCursor() {
 //------------------------------------------------------------------------------------
 void tempWorldStuff() {
 	updateEntities();
-	updateCursor();
+	if (cursorMode != WAITING) {
+		updateCursor();
+	} else {
+		updateIdleAction();
+	}
 	// moving camera
 	if (IsKeyDown(KEY_W)) {
 		camera->y -= 1.5f;
